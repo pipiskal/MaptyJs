@@ -112,7 +112,7 @@ class App {
         console.log(runningObj);
       }
     });
-
+    // we we submit the data from the form we want a new workout to be created! and some other stuff
     form.addEventListener('submit', this._newWorkout.bind(this));
     // i want when selecting a cycling  cadence to hide and elevation to appear.
     // binding this here it wont change anything cause we dont use this in the method but its nice to have
@@ -174,6 +174,11 @@ class App {
     let userInsertedValues = [];
 
     // Get Data from the form
+
+    const type = inputType.value;
+    // converting the string directly to number by adding + at the beggining of the string
+    const distance = +inputDistance.value;
+    const duration = +inputDuration.value;
 
     // Check if data is valid
 
