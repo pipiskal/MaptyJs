@@ -37,6 +37,7 @@ class Workout {
 }
 
 class Running extends Workout {
+  type = 'running';
   constructor(coords, distance, duration, cadence) {
     super(coords, distance, duration);
     this.cadence = cadence;
@@ -52,6 +53,7 @@ class Running extends Workout {
 }
 
 class Cycling extends Workout {
+  type = 'cycling';
   constructor(coords, distance, duration, elevetionGain) {
     super(coords, distance, duration);
     this.elevetionGain = elevetionGain;
@@ -75,6 +77,7 @@ class App {
   // private properties of the class
   #map;
   #mapEvent;
+  #workoutList = [];
   constructor() {
     this._getPosition();
     // the event listeners that we want to be ready when our app starts
@@ -83,35 +86,35 @@ class App {
 
     //experimenting to get the data from the form when submitting and creating a new object depending
     // on the type of the excercise
-    form.addEventListener('submit', function () {
-      let values = [];
-      // it will load all the values of the correspoing html fields
-      inputValues.forEach(input => {
-        values.push(input.value);
-      });
+    // form.addEventListener('submit', function () {
+    //   let values = [];
+    //   // it will load all the values of the correspoing html fields
+    //   inputValues.forEach(input => {
+    //     values.push(input.value);
+    //   });
 
-      console.log(values);
-      // the first entry in the array is the type of excercise
-      if (values[0] === 'cycling') {
-        // create a new instance of Cycling class
-        let cyclingObj = new Cycling(
-          [23, -44],
-          values[1],
-          values[2],
-          values[4]
-        );
-        console.log(cyclingObj);
-      } else if (values[0] === 'running') {
-        // create a new instance of Running class
-        let runningObj = new Running(
-          [23, -44],
-          values[1],
-          values[2],
-          values[3]
-        );
-        console.log(runningObj);
-      }
-    });
+    //   console.log(values);
+    //   // the first entry in the array is the type of excercise
+    //   if (values[0] === 'cycling') {
+    //     // create a new instance of Cycling class
+    //     let cyclingObj = new Cycling(
+    //       [23, -44],
+    //       values[1],
+    //       values[2],
+    //       values[4]
+    //     );
+    //     console.log(cyclingObj);
+    //   } else if (values[0] === 'running') {
+    //     // create a new instance of Running class
+    //     let runningObj = new Running(
+    //       [23, -44],
+    //       values[1],
+    //       values[2],
+    //       values[3]
+    //     );
+    //     console.log(runningObj);
+    //   }
+    // });
     // we we submit the data from the form we want a new workout to be created! and some other stuff
     form.addEventListener('submit', this._newWorkout.bind(this));
     // i want when selecting a cycling  cadence to hide and elevation to appear.
@@ -171,7 +174,18 @@ class App {
   _newWorkout(event) {
     event.preventDefault();
     const { lat, lng } = this.#mapEvent.latlng;
-    let userInsertedValues = [];
+    const coords = [lat, lng];
+
+    //create some helper function to do the validation with diffrent number of values
+    const allAreNumbers = (...values) => {
+      let result = values.every(value => Number.isFinite(value));
+      return result;
+    };
+
+    const allPositive = (...values) => {
+      let result = values.every(value => value > 0);
+      return result;
+    };
 
     // Get Data from the form
 
@@ -179,17 +193,65 @@ class App {
     // converting the string directly to number by adding + at the beggining of the string
     const distance = +inputDistance.value;
     const duration = +inputDuration.value;
-
+    let cadence;
+    let elevetionGain;
+    let workout;
     // Check if data is valid
 
-    // if workout running, create running object
+    if (type === 'running') {
+      // validating data
+      cadence = +inputCadence.value;
+      // need to check if data that gets entered is a number and a positive number
+      if (
+        !allAreNumbers(distance, duration, cadence) ||
+        !allPositive(distance, duration, cadence)
+      ) {
+        alert('The values need to be a possitive number');
+      }
+    }
 
+    if (type === 'cycling') {
+      // validating data
+      elevetionGain = +inputElevation.value;
+      // need to check if data that gets entered is a number and a positive number
+      if (
+        !allAreNumbers(distance, duration, elevetionGain) ||
+        !allPositive(distance, duration)
+      ) {
+        alert('The values need to be a possitive number');
+      }
+    }
+
+    // if workout running, create running object
+    if (type === 'running') {
+      workout = new Running(coords, distance, duration, cadence);
+      console.log(workout);
+    }
     // if workout cycling, create cycling object
+    if (type === 'cycling') {
+      workout = new Cycling(coords, distance, duration, elevetionGain);
+      console.log(workout);
+    }
 
     // Add the new created object to workout array
+    this.#workoutList.push(workout);
 
+    this._renderWorkOutMarker(workout);
+
+    // show the work out list on the page
+
+    this._renderWorkOut(workout);
+
+    // clearing the form fields when submiting
+    inputDistance.value = '';
+    inputDuration.value = '';
+    inputCadence.value = '';
+    inputElevation.value = '';
+  }
+
+  _renderWorkOutMarker(workout) {
     //Render workout on map as marker
-    L.marker([lat, lng])
+    L.marker(workout.coords)
       .addTo(this.#map)
       .bindPopup(
         L.popup({
@@ -197,22 +259,16 @@ class App {
           minWidth: 100,
           autoClose: false,
           closeOnClick: false,
-          className: 'running-popup',
+          className: `${workout.type}-popup`,
         })
       )
-      .setPopupContent(`Workout with Distance ${userInsertedValues[0]}`)
+      .setPopupContent(`Workout `)
       .openPopup();
+  }
 
-    // clearing the form fields when submiting
-    inputValues.forEach(input => {
-      userInsertedValues.push(input.value);
-      input.value = '';
-    });
+  _renderWorkOut(workout) {
+    //
   }
 }
-
-// if navigator.geolocation exists
-
-// when we hit enter it will also trigger the sumbit on that form
 
 const app = new App();
